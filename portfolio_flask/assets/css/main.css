@@ -1,0 +1,33 @@
+.background{
+margin-top: 25px;
+    background-image: url(/assets/images/leaf.jpg);
+    background-size: cover;
+}
+
+.button{
+background-color: #d1d1d1;
+border-radius: 20;
+height: 100px;
+width: 100px;
+margin-left: 50px;
+margin-top: 10%;
+border: slategrey;
+
+}
+
+.textbox{
+color: aliceblue;
+padding: auto;
+margin: auto;
+margin-top: 15%;
+padding-left: 10px;
+
+    
+}
+
+.position{
+padding: auto;
+margin: auto;
+margin-top: 15px;
+
+}
