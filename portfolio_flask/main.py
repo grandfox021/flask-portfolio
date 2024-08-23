@@ -16,10 +16,22 @@ db = SQLAlchemy(app)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    _password = db.Column(db.String(120), nullable=False)
 
     def __repr__(self):
         return f'<User {self.username}>'
+
+    @property
+    def password(self):
+        raise AttributeError("password is not a readable attribute")
+
+    @password.setter
+    def password(self, password):
+        self._password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
+
+    def verify_password(self, password):
+        return check_password_hash(self._password, password)
+    
 
 with app.app_context():
     db.create_all()
@@ -42,26 +54,59 @@ def home() :
 
 @app.route("/login",methods = ['POST','GET'])
 def login () :
-    if "username" in session :
-        flash("you are alredy logged in")
+
+    if "username" in session:
+        flash("You are already logged in")
         return redirect(url_for("home"))
 
-    if request.method == "POST" and "sign_in" in request.form :
+    if request.method == "POST" and "sign_in" in request.form:
         username = request.form['username']
         password = request.form['password']
 
-        if User.query.filter_by(username = username , password= password).first() :
-            session["username"] = username
-            session["password"] = password
-            return redirect(url_for("home"))
-        else :
-            flash("Your username or password is not correct")
-            return redirect(url_for('login'))
-    
-    else:
-        return render_template("login.html")
+        # Query the user by username
+        user = User.query.filter_by(username=username).first()
+
+        if user:
+            print(f"User found: {user.username}")  # Debugging
+            print(f"Entered password: {password}")  # Debugging
+
+            if user.verify_password(password):
+                print("Password matched")  # Debugging
+                session['username'] = username
+                flash("Login successful!")
+                return redirect(url_for("home"))
+            else:
+                print("Password comparison failed")  # Debugging
+                flash("Invalid credentials, please try again.")
+        else:
+            print("User not found")  # Debugging
+            flash("Invalid username, please try again.")
+
+    return render_template("login.html")
 
 
+
+
+    # if "username" in session :
+    #     flash("you are alredy logged in")
+    #     return redirect(url_for("home"))
+
+    # if request.method == "POST" and "sign_in" in request.form :
+    #     username = request.form['username']
+    #     password = request.form['password']
+
+    #     # Query the user by username
+    #     user = User.query.filter_by(username=username).first()
+
+    #     if user and user.verify_password(password):
+    #         session['username'] = username
+    #         flash("Login successful!")
+    #         return redirect(url_for("home"))
+    #     else:
+    #         flash("Invalid username or password")
+    #         return redirect(url_for("login"))
+        
+    # return render_template("login.html")
 
 @app.route("/logout")
 def logout() :
@@ -97,6 +142,7 @@ def signup() :
             flash("this username is alredy taken","info")
             return redirect(url_for("signup"))
         password = request.form['pass_signup']
+        # hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
         new_user = User(username=username, password=password)
         db.session.add(new_user)
         db.session.commit()
